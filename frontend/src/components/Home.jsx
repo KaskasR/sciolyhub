@@ -5,6 +5,9 @@ import './Home.css'
 function Home({ user, onSignOut }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [newUsername, setNewUsername] = useState('')
+  const [updateMessage, setUpdateMessage] = useState('')
 
   useEffect(() => {
     fetchProfile()
@@ -20,13 +23,98 @@ function Home({ user, onSignOut }) {
 
       if (error) {
         console.error('Error fetching profile:', error)
+        // If no profile exists, create one with a default username
+        if (error.code === 'PGRST116') {
+          await createDefaultProfile()
+        }
       } else {
         setProfile(data)
+        setNewUsername(data.username)
       }
     } catch (error) {
       console.error('Error:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const createDefaultProfile = async () => {
+    const defaultUsername = user.email.split('@')[0]
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([{
+        id: user.id,
+        username: defaultUsername,
+      }])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating profile:', error)
+    } else {
+      setProfile(data)
+      setNewUsername(data.username)
+    }
+  }
+
+  const checkUsernameAvailability = async (username) => {
+    if (username.length < 3) {
+      return { available: false, message: 'Username must be at least 3 characters long' }
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return { available: false, message: 'Username can only contain letters, numbers, and underscores' }
+    }
+
+    // Don't check if it's the same as current username
+    if (username === profile?.username) {
+      return { available: true, message: 'That\'s your current username' }
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      return { available: false, message: 'Error checking username availability' }
+    }
+
+    if (data) {
+      return { available: false, message: 'Username is already taken' }
+    }
+
+    return { available: true, message: 'Username is available!' }
+  }
+
+  const updateUsername = async () => {
+    if (!newUsername.trim()) {
+      setUpdateMessage('Please enter a username')
+      return
+    }
+
+    const usernameCheck = await checkUsernameAvailability(newUsername.trim())
+    if (!usernameCheck.available && newUsername !== profile?.username) {
+      setUpdateMessage(usernameCheck.message)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ username: newUsername.trim() })
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      setUpdateMessage('Failed to update username')
+      console.error('Update error:', error)
+    } else {
+      setProfile(data)
+      setIsEditing(false)
+      setUpdateMessage('Username updated successfully! 🎉')
+      setTimeout(() => setUpdateMessage(''), 3000)
     }
   }
 
@@ -52,18 +140,47 @@ function Home({ user, onSignOut }) {
           <span className="nav-title">SciOly Hub</span>
         </div>
         <div className="nav-user">
-          <span className="welcome-text">Hey, {profile?.username || 'Scientist'}! 👋</span>
+          <div className="user-info">
+            {isEditing ? (
+              <div className="username-edit">
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="username-input"
+                  placeholder="New username"
+                  maxLength={20}
+                />
+                <button onClick={updateUsername} className="save-btn">💾</button>
+                <button onClick={() => {
+                  setIsEditing(false)
+                  setNewUsername(profile?.username || '')
+                  setUpdateMessage('')
+                }} className="cancel-btn">❌</button>
+              </div>
+            ) : (
+              <span className="welcome-text" onClick={() => setIsEditing(true)}>
+                Hey, {profile?.username || 'Scientist'}! 👋 ✏️
+              </span>
+            )}
+          </div>
           <button onClick={handleSignOut} className="sign-out-btn">
             Sign Out 🚪
           </button>
         </div>
       </nav>
 
+      {updateMessage && (
+        <div className={`update-message ${updateMessage.includes('successfully') ? 'success' : 'error'}`}>
+          {updateMessage}
+        </div>
+      )}
+
       <main className="main-content">
         <section className="hero">
           <div className="hero-content">
             <h1 className="hero-title">
-              Welcome to Your Science Lab! 
+              Welcome to Your Science Lab, {profile?.username}! 
               <span className="hero-emoji">🧪</span>
             </h1>
             <p className="hero-subtitle">

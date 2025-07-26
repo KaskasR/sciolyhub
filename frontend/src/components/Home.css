@@ -69,6 +69,11 @@
   min-width: 0;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
 .welcome-text {
   font-weight: 500;
   color: #374151;
@@ -76,6 +81,90 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.welcome-text:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateY(-1px);
+}
+
+.username-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.username-input {
+  padding: 0.25rem 0.5rem;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-weight: 500;
+  background: white;
+  min-width: 100px;
+  max-width: 150px;
+}
+
+.username-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.save-btn, .cancel-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  transform: scale(1.1);
+}
+
+.cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.1);
+}
+
+.update-message {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+.update-message.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.update-message.error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .sign-out-btn {
