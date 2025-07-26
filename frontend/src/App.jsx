@@ -1,95 +1,64 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
+import Auth from './components/Auth'
+import Home from './components/Home'
 
 function App() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [mode, setMode] = useState('login') // or 'signup'
-  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(true)
 
-const handleAuth = async () => {
-  setMessage('Loading...')
-
-  if (mode === 'signup') {
-    const result = await supabase.auth.signUp({ email, password })
-
-    if (result.error) {
-      setMessage(result.error.message)
-      return
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user ?? null)
+      setLoading(false)
     }
 
-    // Wait for Supabase to confirm session and get user ID
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    const user = sessionData?.session?.user
+    checkSession()
 
-    if (!user || sessionError) {
-      setMessage("Signed up, but can't get user ID yet.")
-      return
-    }
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
+    )
 
-    // Insert profile with correct user ID
-    const { error: profileError } = await supabase.from('profiles').insert([
-      {
-        id: user.id,
-        username: email.split('@')[0],
-      },
-    ])
+    return () => subscription.unsubscribe()
+  }, [])
 
-    if (profileError) {
-      setMessage('Signup succeeded, but failed to create profile.')
-      console.error(profileError)
-      return
-    }
-
-    setMessage('Signup and profile created!')
+  const handleAuth = (user) => {
     setUser(user)
-
-  } else {
-    const result = await supabase.auth.signInWithPassword({ email, password })
-
-    if (result.error) {
-      setMessage(result.error.message)
-      return
-    }
-
-    setMessage('Login successful!')
-    setUser(result.data.user)
   }
-}
 
+  const handleSignOut = () => {
+    setUser(null)
+  }
 
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '1.2rem'
+      }}>
+        Loading SciOly Hub... 🔬
+      </div>
+    )
+  }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>{mode === 'signup' ? 'Sign Up' : 'Log In'}</h1>
-
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      /><br /><br />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-      /><br /><br />
-
-      <button onClick={handleAuth}>
-        {mode === 'signup' ? 'Sign Up' : 'Log In'}
-      </button>
-
-      <p>{message}</p>
-
-      <br />
-      <button onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}>
-        Switch to {mode === 'signup' ? 'Login' : 'Signup'}
-      </button>
-
-      {user && <p>Welcome, {user.email}!</p>}
+    <div>
+      {user ? (
+        <Home user={user} onSignOut={handleSignOut} />
+      ) : (
+        <Auth onAuth={handleAuth} />
+      )}
     </div>
   )
 }
