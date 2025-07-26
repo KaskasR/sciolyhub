@@ -2,18 +2,19 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import './Home.css'
 
-function Home({ user, onSignOut }) {
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
-  const [newUsername, setNewUsername] = useState('')
-  const [updateMessage, setUpdateMessage] = useState('')
+function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) {
+  const [loading, setLoading] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
-    fetchProfile()
-  }, [user])
+    // Ensure we have a profile
+    if (user && !profile) {
+      fetchOrCreateProfile()
+    }
+  }, [user, profile])
 
-  const fetchProfile = async () => {
+  const fetchOrCreateProfile = async () => {
+    setLoading(true)
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -21,15 +22,21 @@ function Home({ user, onSignOut }) {
         .eq('id', user.id)
         .single()
 
-      if (error) {
-        console.error('Error fetching profile:', error)
-        // If no profile exists, create one with a default username
-        if (error.code === 'PGRST116') {
-          await createDefaultProfile()
+      if (error && error.code === 'PGRST116') {
+        // Create default profile
+        const defaultUsername = user.email.split('@')[0]
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: user.id,
+            username: defaultUsername,
+          }])
+
+        if (!insertError) {
+          onProfileUpdate(user.id)
         }
-      } else {
-        setProfile(data)
-        setNewUsername(data.username)
+      } else if (!error) {
+        // Profile exists, no need to update
       }
     } catch (error) {
       console.error('Error:', error)
@@ -38,89 +45,27 @@ function Home({ user, onSignOut }) {
     }
   }
 
-  const createDefaultProfile = async () => {
-    const defaultUsername = user.email.split('@')[0]
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([{
-        id: user.id,
-        username: defaultUsername,
-      }])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating profile:', error)
-    } else {
-      setProfile(data)
-      setNewUsername(data.username)
-    }
-  }
-
-  const checkUsernameAvailability = async (username) => {
-    if (username.length < 3) {
-      return { available: false, message: 'Username must be at least 3 characters long' }
-    }
-    
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return { available: false, message: 'Username can only contain letters, numbers, and underscores' }
-    }
-
-    // Don't check if it's the same as current username
-    if (username === profile?.username) {
-      return { available: true, message: 'That\'s your current username' }
-    }
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('username', username)
-      .single()
-
-    if (error && error.code !== 'PGRST116') {
-      return { available: false, message: 'Error checking username availability' }
-    }
-
-    if (data) {
-      return { available: false, message: 'Username is already taken' }
-    }
-
-    return { available: true, message: 'Username is available!' }
-  }
-
-  const updateUsername = async () => {
-    if (!newUsername.trim()) {
-      setUpdateMessage('Please enter a username')
-      return
-    }
-
-    const usernameCheck = await checkUsernameAvailability(newUsername.trim())
-    if (!usernameCheck.available && newUsername !== profile?.username) {
-      setUpdateMessage(usernameCheck.message)
-      return
-    }
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ username: newUsername.trim() })
-      .eq('id', user.id)
-      .select()
-      .single()
-
-    if (error) {
-      setUpdateMessage('Failed to update username')
-      console.error('Update error:', error)
-    } else {
-      setProfile(data)
-      setIsEditing(false)
-      setUpdateMessage('Username updated successfully! 🎉')
-      setTimeout(() => setUpdateMessage(''), 3000)
-    }
-  }
-
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     onSignOut()
+  }
+
+  const handleDropdownClick = (action) => {
+    setShowDropdown(false)
+    
+    switch (action) {
+      case 'profile':
+        onNavigate('profile')
+        break
+      case 'settings':
+        onNavigate('settings')
+        break
+      case 'signout':
+        handleSignOut()
+        break
+      default:
+        break
+    }
   }
 
   if (loading) {
@@ -133,48 +78,54 @@ function Home({ user, onSignOut }) {
   }
 
   return (
-    <div className="home-container">
+    <div className={`home-container ${theme}`}>
       <nav className="navbar">
         <div className="nav-brand">
           <span className="nav-logo">🔬</span>
           <span className="nav-title">SciOly Hub</span>
         </div>
         <div className="nav-user">
-          <div className="user-info">
-            {isEditing ? (
-              <div className="username-edit">
-                <input
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  className="username-input"
-                  placeholder="New username"
-                  maxLength={20}
-                />
-                <button onClick={updateUsername} className="save-btn">💾</button>
-                <button onClick={() => {
-                  setIsEditing(false)
-                  setNewUsername(profile?.username || '')
-                  setUpdateMessage('')
-                }} className="cancel-btn">❌</button>
-              </div>
-            ) : (
-              <span className="welcome-text" onClick={() => setIsEditing(true)}>
-                Hey, {profile?.username || 'Scientist'}! 👋 ✏️
+          <div 
+            className="user-dropdown"
+            onMouseEnter={() => setShowDropdown(true)}
+            onMouseLeave={() => setShowDropdown(false)}
+          >
+            <div className="user-trigger">
+              <span className="welcome-text">
+                Hey, {profile?.username || 'Scientist'}! 👋
               </span>
+              <span className="dropdown-arrow">▼</span>
+            </div>
+            
+            {showDropdown && (
+              <div className="dropdown-menu">
+                <button 
+                  className="dropdown-item"
+                  onClick={() => handleDropdownClick('profile')}
+                >
+                  <span className="dropdown-icon">�</span>
+                  Profile Dashboard
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={() => handleDropdownClick('settings')}
+                >
+                  <span className="dropdown-icon">⚙️</span>
+                  Settings
+                </button>
+                <div className="dropdown-divider"></div>
+                <button 
+                  className="dropdown-item danger"
+                  onClick={() => handleDropdownClick('signout')}
+                >
+                  <span className="dropdown-icon">🚪</span>
+                  Sign Out
+                </button>
+              </div>
             )}
           </div>
-          <button onClick={handleSignOut} className="sign-out-btn">
-            Sign Out 🚪
-          </button>
         </div>
       </nav>
-
-      {updateMessage && (
-        <div className={`update-message ${updateMessage.includes('successfully') ? 'success' : 'error'}`}>
-          {updateMessage}
-        </div>
-      )}
 
       <main className="main-content">
         <section className="hero">
