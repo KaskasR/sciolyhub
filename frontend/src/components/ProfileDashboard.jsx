@@ -11,6 +11,8 @@ function ProfileDashboard({ user, profile, onBack }) {
     favoriteEvent: 'Not Set',
     joinDate: 'Unknown'
   })
+  const [uploading, setUploading] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState('')
 
   useEffect(() => {
     // For now, we'll use mock data. Later this can be replaced with real data from the database
@@ -51,6 +53,102 @@ function ProfileDashboard({ user, profile, onBack }) {
     return events[Math.floor(Math.random() * events.length)]
   }
 
+  const uploadProfilePicture = async (event) => {
+    try {
+      setUploading(true)
+      setUploadMessage('')
+
+      const file = event.target.files[0]
+      if (!file) return
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setUploadMessage('Please select an image file')
+        setUploading(false)
+        return
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadMessage('Image must be smaller than 5MB')
+        setUploading(false)
+        return
+      }
+
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath)
+
+      // Update user profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      setUploadMessage('Profile picture updated successfully! 🎉')
+      
+      // Refresh the page after a short delay to show the new image
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+
+    } catch (error) {
+      console.error('Error uploading profile picture:', error)
+      setUploadMessage('Failed to upload profile picture. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeProfilePicture = async () => {
+    try {
+      setUploading(true)
+      setUploadMessage('')
+
+      // Update profile to remove custom avatar (will fall back to Google avatar or initials)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+
+      setUploadMessage('Profile picture removed successfully! 🗑️')
+      
+      // Refresh the page after a short delay
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+
+    } catch (error) {
+      console.error('Error removing profile picture:', error)
+      setUploadMessage('Failed to remove profile picture. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div className="profile-dashboard">
       <div className="dashboard-header">
@@ -60,11 +158,63 @@ function ProfileDashboard({ user, profile, onBack }) {
 
       <div className="dashboard-content">
         <div className="profile-info-card">
-          <div className="profile-avatar">
-            {profile?.username?.charAt(0).toUpperCase() || '👤'}
+          <div className="avatar-section">
+            <div className="profile-avatar">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt={`${profile.username || 'User'}'s profile`}
+                  className="avatar-image"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div 
+                className="avatar-fallback" 
+                style={{ display: profile?.avatar_url ? 'none' : 'flex' }}
+              >
+                {profile?.username?.charAt(0).toUpperCase() || '👤'}
+              </div>
+            </div>
+            
+            <div className="avatar-controls">
+              <input
+                type="file"
+                id="avatar-upload"
+                accept="image/*"
+                onChange={uploadProfilePicture}
+                style={{ display: 'none' }}
+                disabled={uploading}
+              />
+              <label 
+                htmlFor="avatar-upload" 
+                className={`upload-btn ${uploading ? 'loading' : ''}`}
+              >
+                {uploading ? '⏳ Uploading...' : '📷 Change Photo'}
+              </label>
+              
+              {profile?.avatar_url && (
+                <button 
+                  onClick={removeProfilePicture}
+                  className={`remove-btn ${uploading ? 'loading' : ''}`}
+                  disabled={uploading}
+                >
+                  🗑️ Remove Photo
+                </button>
+              )}
+              
+              {uploadMessage && (
+                <div className={`upload-message ${uploadMessage.includes('successfully') ? 'success' : 'error'}`}>
+                  {uploadMessage}
+                </div>
+              )}
+            </div>
           </div>
+          
           <div className="profile-details">
-            <h2 className="profile-name">{profile?.username || 'Unknown User'}</h2>
+            <h2 className="profile-name">{profile?.display_name || profile?.username || 'Unknown User'}</h2>
             <p className="profile-email">{user?.email || 'No email'}</p>
             <p className="profile-rank">{stats.rank}</p>
             <p className="join-date">Joined: {stats.joinDate}</p>

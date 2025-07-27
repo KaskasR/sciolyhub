@@ -91,6 +91,25 @@ function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) 
             onMouseLeave={() => setShowDropdown(false)}
           >
             <div className="user-trigger">
+              <div className="nav-avatar">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt={`${profile.username || 'User'}'s profile`}
+                    className="nav-avatar-image"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="nav-avatar-fallback" 
+                  style={{ display: profile?.avatar_url ? 'none' : 'flex' }}
+                >
+                  {profile?.username?.charAt(0).toUpperCase() || '👤'}
+                </div>
+              </div>
               <span className="welcome-text">
                 Hey, {profile?.username || 'Scientist'}! 👋
               </span>

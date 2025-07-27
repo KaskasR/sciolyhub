@@ -81,6 +81,12 @@ function App() {
     await fetchProfile(user.id)
   }
 
+  const handleUsernameRequired = () => {
+    // This will be called when a user signs in with Google but doesn't have a username
+    // The Auth component will handle the username setup
+    return
+  }
+
   const handleSignOut = () => {
     setUser(null)
     setProfile(null)
@@ -116,6 +122,11 @@ function App() {
 
   if (!user) {
     return <Auth onAuth={handleAuth} />
+  }
+
+  // Check if user needs to set up username (signed in with Google but no profile)
+  if (user && !profile) {
+    return <Auth onAuth={handleAuth} user={user} />
   }
 
   // Render different pages based on currentPage state
