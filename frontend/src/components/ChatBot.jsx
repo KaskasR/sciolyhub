@@ -12,10 +12,12 @@ function ChatBot({ user, profile, onBack, theme }) {
   ])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [apiKey, setApiKey] = useState(localStorage.getItem('openai-api-key') || '')
-  const [showApiKeyInput, setShowApiKeyInput] = useState(!apiKey)
+  const [connectionError, setConnectionError] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  // Backend API URL - adjust this for production
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -25,25 +27,8 @@ function ChatBot({ user, profile, onBack, theme }) {
     scrollToBottom()
   }, [messages])
 
-  const saveApiKey = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem('openai-api-key', apiKey.trim())
-      setShowApiKeyInput(false)
-    }
-  }
-
-  const clearApiKey = () => {
-    localStorage.removeItem('openai-api-key')
-    setApiKey('')
-    setShowApiKeyInput(true)
-  }
-
   const sendMessage = async () => {
     if (!inputMessage.trim()) return
-    if (!apiKey) {
-      setShowApiKeyInput(true)
-      return
-    }
 
     const userMessage = {
       id: Date.now(),
@@ -55,44 +40,35 @@ function ChatBot({ user, profile, onBack, theme }) {
     setMessages(prev => [...prev, userMessage])
     setInputMessage('')
     setIsLoading(true)
+    setConnectionError(false)
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Get conversation history for context (last 5 messages)
+      const conversationHistory = messages
+        .slice(-5)
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }))
+
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini', // Using the latest, most cost-effective model
-          messages: [
-            {
-              role: 'system',
-              content: `You are SciBot, a helpful Science Olympiad study assistant. You specialize in helping students with:
-              - Science Olympiad events and competitions
-              - Physics, Chemistry, Biology, Earth Science concepts
-              - Study strategies and test-taking tips
-              - Laboratory techniques and safety
-              - Scientific problem-solving
-              
-              Keep responses helpful, engaging, and appropriate for high school students. Use emojis occasionally to make it fun! Always encourage scientific curiosity and learning.`
-            },
-            {
-              role: 'user',
-              content: userMessage.text
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
+          message: userMessage.text,
+          conversation: conversationHistory
         })
       })
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Server error: ${response.status}`)
       }
 
       const data = await response.json()
-      const botResponse = data.choices[0]?.message?.content || "Sorry, I couldn't process that request."
+      const botResponse = data.response || "Sorry, I couldn't process that request."
 
       const botMessage = {
         id: Date.now() + 1,
@@ -102,18 +78,21 @@ function ChatBot({ user, profile, onBack, theme }) {
       }
 
       setMessages(prev => [...prev, botMessage])
+
     } catch (error) {
-      console.error('Error calling OpenAI API:', error)
+      console.error('Error calling backend API:', error)
       
       let errorMessage = "Sorry, I'm having trouble connecting right now. "
       
-      if (error.message.includes('401')) {
-        errorMessage += "Please check your API key."
-        setShowApiKeyInput(true)
-      } else if (error.message.includes('429')) {
-        errorMessage += "Rate limit exceeded. Please try again in a moment."
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage += "Unable to connect to the server. Please make sure the backend is running."
+        setConnectionError(true)
+      } else if (error.message.includes('quota exceeded')) {
+        errorMessage += "Service temporarily unavailable due to high usage. Please try again later."
+      } else if (error.message.includes('rate_limit_exceeded')) {
+        errorMessage += "Too many requests. Please wait a moment and try again."
       } else {
-        errorMessage += "Please try again later."
+        errorMessage += error.message || "Please try again later."
       }
 
       const errorBotMessage = {
@@ -161,40 +140,14 @@ function ChatBot({ user, profile, onBack, theme }) {
             <button onClick={clearChat} className="clear-chat-btn" title="Clear Chat">
               🗑️
             </button>
-            <button 
-              onClick={() => setShowApiKeyInput(!showApiKeyInput)} 
-              className="api-key-btn"
-              title="API Settings"
-            >
-              ⚙️
-            </button>
+            {connectionError && (
+              <div className="connection-status error" title="Backend connection issue">
+                ⚠️
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {showApiKeyInput && (
-        <div className="api-key-section">
-          <div className="api-key-info">
-            <h3>🔑 OpenAI API Key Required</h3>
-            <p>To use SciBot, you need an OpenAI API key. Get one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI Platform</a></p>
-          </div>
-          <div className="api-key-input">
-            <input
-              type="password"
-              placeholder="Enter your OpenAI API key (sk-...)"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="api-input"
-            />
-            <div className="api-actions">
-              <button onClick={saveApiKey} className="save-key-btn">Save Key</button>
-              {apiKey && (
-                <button onClick={clearApiKey} className="clear-key-btn">Clear Key</button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="chat-messages">
         {messages.map((message) => (
@@ -228,14 +181,14 @@ function ChatBot({ user, profile, onBack, theme }) {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={apiKey ? "Ask SciBot about Science Olympiad..." : "Please set your API key first"}
+            placeholder="Ask SciBot about Science Olympiad..."
             className="chat-input"
             rows="1"
-            disabled={!apiKey || isLoading}
+            disabled={isLoading}
           />
           <button 
             onClick={sendMessage} 
-            disabled={!inputMessage.trim() || !apiKey || isLoading}
+            disabled={!inputMessage.trim() || isLoading}
             className="send-btn"
           >
             {isLoading ? '⏳' : '🚀'}
