@@ -4,6 +4,7 @@ import Auth from './components/Auth'
 import Home from './components/Home'
 import ProfileDashboard from './components/ProfileDashboard'
 import Settings from './components/Settings'
+import ChatBot from './components/ChatBot'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -147,6 +148,15 @@ function App() {
           onBack={() => navigateTo('home')}
           theme={theme}
           onThemeChange={handleThemeChange}
+        />
+      )
+    case 'chatbot':
+      return (
+        <ChatBot 
+          user={user} 
+          profile={profile}
+          onBack={() => navigateTo('home')}
+          theme={theme}
         />
       )
     default:

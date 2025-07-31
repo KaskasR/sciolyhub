@@ -170,10 +170,10 @@ function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) 
 
         <section className="features-grid">
           <div className="feature-card">
-            <div className="feature-icon">📚</div>
-            <h3>Study Materials</h3>
-            <p>Access comprehensive study guides, practice tests, and resources for all Science Olympiad events.</p>
-            <button className="feature-btn">Coming Soon!</button>
+            <div className="feature-icon">🤖</div>
+            <h3>SciBot Assistant</h3>
+            <p>Chat with our AI-powered study companion for instant help with science concepts and competition strategies.</p>
+            <button className="feature-btn active" onClick={() => onNavigate('chatbot')}>Chat Now!</button>
           </div>
 
           <div className="feature-card">

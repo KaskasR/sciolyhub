@@ -499,6 +499,26 @@
   opacity: 1;
 }
 
+.feature-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 1;
+  animation: pulse 2s infinite;
+}
+
+.feature-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+  }
+}
+
 .stats-section {
   backdrop-filter: blur(20px);
   border-radius: clamp(16px, 4vw, 24px);
