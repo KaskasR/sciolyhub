@@ -24,37 +24,8 @@ function App() {
     setTheme(savedTheme)
     document.documentElement.setAttribute('data-theme', savedTheme)
 
-    // Check if there are auth tokens in the URL hash (Supabase redirects here)
-    const handleAuthFromHash = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = hashParams.get('access_token')
-      
-      if (accessToken) {
-        // Clear the hash from URL immediately
-        window.history.replaceState({}, document.title, window.location.pathname)
-        
-        // Wait a moment for Supabase to process the tokens
-        setTimeout(async () => {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session) {
-            setUser(session.user)
-            await fetchProfile(session.user.id)
-            setLoading(false)
-            navigate('/home')
-            return
-          }
-        }, 100)
-        return true
-      }
-      return false
-    }
-
     // Check if user is already logged in
     const checkSession = async () => {
-      // First check if we're handling auth tokens
-      const hasAuthTokens = await handleAuthFromHash()
-      if (hasAuthTokens) return
-
       const { data: { session } } = await supabase.auth.getSession()
       const currentUser = session?.user ?? null
       setUser(currentUser)

@@ -47,10 +47,17 @@ function Auth({ onAuth, user, needsUsername = false }) {
     setMessage('Redirecting to Google...')
 
     try {
+      // Get the current origin to ensure we're using the correct domain
+      const currentOrigin = window.location.origin
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${currentOrigin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       })
 
