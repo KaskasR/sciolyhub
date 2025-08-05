@@ -7,162 +7,106 @@ function AuthCallback() {
   const [status, setStatus] = useState('Processing authentication...')
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    let mounted = true
+
+    const checkAuthState = async () => {
       try {
-        console.log('AuthCallback: Starting auth callback handling...')
-        setStatus('Processing authentication...')
+        console.log('AuthCallback: Checking authentication state...')
         
         // Check URL parameters
         const urlParams = new URLSearchParams(window.location.search)
-        const code = urlParams.get('code')
-        const error = urlParams.get('error')
+        const hasCode = urlParams.has('code')
+        const hasError = urlParams.has('error')
         
-        console.log('AuthCallback: URL params:', { code: code ? 'present' : 'missing', error })
+        if (hasError) {
+          const error = urlParams.get('error')
+          console.error('AuthCallback: OAuth error:', error)
+          if (mounted) {
+            setStatus('Authentication failed')
+            navigate(`/?error=${error}`)
+          }
+          return
+        }
+        
+        if (hasCode) {
+          console.log('AuthCallback: Auth code detected, waiting for Supabase to process...')
+          if (mounted) setStatus('Completing sign-in...')
+          
+          // Clear URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }
+        
+        // Wait for Supabase auth state to settle
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('AuthCallback: OAuth error in URL:', error)
-          setStatus('Authentication failed')
-          navigate(`/?error=${error}`)
-          return
-        }
-        
-        // If we have a code, let Supabase's auth state listener handle the session
-        // We just need to wait for the session to be established
-        if (code) {
-          console.log('AuthCallback: Found auth code, waiting for session...')
-          setStatus('Completing sign-in...')
-          
-          // Clear the URL parameters
-          window.history.replaceState({}, document.title, window.location.pathname)
-          
-          // Wait a bit for the auth state change to process
-          let attempts = 0
-          const maxAttempts = 10
-          
-          const checkForSession = async () => {
-            attempts++
-            console.log(`AuthCallback: Checking for session (attempt ${attempts})...`)
-            
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-            
-            if (sessionError) {
-              console.error('AuthCallback: Session check error:', sessionError)
-              setStatus('Session check failed')
-              navigate('/?error=session_check_failed')
-              return
-            }
-            
-            if (session) {
-              console.log('AuthCallback: Session found! User:', session.user.email)
-              setStatus('Authentication successful! Checking profile...')
-              
-              // Check if user has a profile
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single()
-              
-              if (profileError && profileError.code === 'PGRST116') {
-                // No profile exists, redirect to username setup
-                console.log('AuthCallback: No profile found, redirecting to username setup')
-                setStatus('Setting up your profile...')
-                setTimeout(() => {
-                  navigate('/auth')
-                }, 500)
-              } else if (profileError) {
-                console.error('AuthCallback: Profile check error:', profileError)
-                setStatus('Profile check failed, redirecting...')
-                setTimeout(() => {
-                  navigate('/')
-                }, 500)
-              } else {
-                // Profile exists, redirect to home
-                console.log('AuthCallback: Profile found, redirecting to home')
-                setStatus('Welcome back! Redirecting...')
-                setTimeout(() => {
-                  navigate('/')
-                }, 500)
-              }
-              return
-            }
-            
-            if (attempts < maxAttempts) {
-              console.log('AuthCallback: No session yet, retrying...')
-              setTimeout(checkForSession, 500)
-            } else {
-              console.log('AuthCallback: Max attempts reached, redirecting anyway...')
-              setStatus('Redirecting...')
-              navigate('/')
-            }
+          console.error('AuthCallback: Session error:', error)
+          if (mounted) {
+            setStatus('Session error')
+            navigate('/?error=session_error')
           }
-          
-          // Start checking after a brief delay
-          setTimeout(checkForSession, 100)
           return
         }
         
-        // If no code, check for existing session
-        console.log('AuthCallback: No code, checking for existing session...')
-        setStatus('Checking session...')
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('AuthCallback: Session check error:', sessionError)
-          setStatus('Session check failed')
-          navigate('/?error=session_check_failed')
+        if (!session) {
+          console.log('AuthCallback: No session found')
+          if (mounted) {
+            setStatus('No session found, redirecting...')
+            navigate('/?error=no_session')
+          }
           return
         }
-
-        if (session) {
-          console.log('AuthCallback: Found existing session, user:', session.user.email)
-          setStatus('Session found! Checking profile...')
-          
-          // Check if user has a profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          
-          if (profileError && profileError.code === 'PGRST116') {
-            // No profile exists, redirect to username setup
-            console.log('AuthCallback: No profile found, redirecting to username setup')
-            setStatus('Setting up your profile...')
-            setTimeout(() => {
-              navigate('/auth')
-            }, 500)
-          } else if (profileError) {
-            console.error('AuthCallback: Profile check error:', profileError)
+        
+        console.log('AuthCallback: Session found! User:', session.user.email)
+        if (mounted) setStatus('Checking your profile...')
+        
+        // Check if user has a profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('username, full_name')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (profileError && profileError.code === 'PGRST116') {
+          // No profile exists, redirect to username setup
+          console.log('AuthCallback: New user - redirecting to username setup')
+          if (mounted) {
+            setStatus('Welcome! Setting up your profile...')
+            setTimeout(() => navigate('/auth'), 500)
+          }
+        } else if (profileError) {
+          console.error('AuthCallback: Profile check error:', profileError)
+          if (mounted) {
             setStatus('Profile check failed, redirecting...')
-            setTimeout(() => {
-              navigate('/')
-            }, 500)
-          } else {
-            // Profile exists, redirect to home
-            console.log('AuthCallback: Profile found, redirecting to home')
-            setStatus('Welcome back! Redirecting...')
-            setTimeout(() => {
-              navigate('/')
-            }, 500)
+            setTimeout(() => navigate('/'), 1000)
           }
         } else {
-          console.log('AuthCallback: No session found, redirecting to home')
-          setStatus('No session found, redirecting...')
-          setTimeout(() => {
-            navigate('/?error=no_session')
-          }, 1000)
+          // Profile exists, redirect to home
+          console.log('AuthCallback: Existing user - redirecting to dashboard')
+          if (mounted) {
+            setStatus(`Welcome back, ${profile.username || profile.full_name}!`)
+            setTimeout(() => navigate('/'), 500)
+          }
         }
+        
       } catch (error) {
-        console.error('AuthCallback: Callback error:', error)
-        setStatus('Authentication failed')
-        setTimeout(() => {
-          navigate('/?error=callback_failed')
-        }, 1000)
+        console.error('AuthCallback: Unexpected error:', error)
+        if (mounted) {
+          setStatus('Something went wrong, redirecting...')
+          setTimeout(() => navigate('/?error=unexpected_error'), 2000)
+        }
       }
     }
 
-    handleAuthCallback()
+    // Start checking auth state after a brief delay
+    const timer = setTimeout(checkAuthState, 100)
+
+    return () => {
+      mounted = false
+      clearTimeout(timer)
+    }
   }, [navigate])
 
   return (
