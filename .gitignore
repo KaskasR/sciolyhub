@@ -17,12 +17,35 @@ dist/
 frontend/dist/
 backend/dist/
 
-# Local env files (sensitive)
+# Local env files (sensitive) - NEVER COMMIT THESE!
 .env
+.env.*
 .env.local
+.env.production
+.env.production.local
+.env.development.local
+.env.test.local
 .env.*.local
 frontend/.env
+frontend/.env.*
+frontend/.env.local
+frontend/.env.production
+frontend/.env.production.local
+frontend/.env.development.local
+frontend/.env.test.local
 backend/.env
+backend/.env.*
+backend/.env.local
+backend/.env.production
+backend/.env.production.local
+backend/.env.development.local
+backend/.env.test.local
+
+# Deployment documentation with sensitive info
+DEPLOYMENT.md
+deployment.md
+**/DEPLOYMENT.md
+**/deployment.md
 
 # System files
 .DS_Store
