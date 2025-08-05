@@ -9,112 +9,104 @@ function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('AuthCallback: Starting auth callback handling...')
         setStatus('Processing authentication...')
-        console.log('Starting auth callback handling...')
         
         // Check URL parameters
         const urlParams = new URLSearchParams(window.location.search)
         const code = urlParams.get('code')
         const error = urlParams.get('error')
         
-        console.log('URL params:', { code: code ? 'present' : 'missing', error })
+        console.log('AuthCallback: URL params:', { code: code ? 'present' : 'missing', error })
         
         if (error) {
-          console.error('OAuth error in URL:', error)
+          console.error('AuthCallback: OAuth error in URL:', error)
           setStatus('Authentication failed')
           navigate(`/?error=${error}`)
           return
         }
         
+        // If we have a code, let Supabase's auth state listener handle the session
+        // We just need to wait for the session to be established
         if (code) {
-          console.log('Found auth code, exchanging for session...')
-          setStatus('Exchanging authorization code...')
+          console.log('AuthCallback: Found auth code, waiting for session...')
+          setStatus('Completing sign-in...')
           
-          try {
-            // Try the modern approach first
-            let result = await supabase.auth.exchangeCodeForSession(code)
-            console.log('Exchange result:', { data: !!result.data, session: !!result.data?.session, error: result.error })
+          // Clear the URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname)
+          
+          // Wait a bit for the auth state change to process
+          let attempts = 0
+          const maxAttempts = 10
+          
+          const checkForSession = async () => {
+            attempts++
+            console.log(`AuthCallback: Checking for session (attempt ${attempts})...`)
             
-            // If exchangeCodeForSession doesn't work, fall back to setSession
-            if (result.error || !result.data?.session) {
-              console.log('Trying alternative session handling...')
-              // Alternative: Let Supabase handle the callback automatically
-              const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-              console.log('Fallback session check:', { session: !!sessionData?.session, error: sessionError })
-              
-              if (sessionError) {
-                console.error('Session error:', sessionError)
-                setStatus('Session handling failed')
-                navigate('/?error=session_failed')
-                return
-              }
-              
-              if (sessionData?.session) {
-                result = { data: sessionData, error: null }
-              }
-            }
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
             
-            if (result.error) {
-              console.error('Auth code exchange error:', result.error)
-              setStatus('Failed to exchange authorization code')
-              navigate('/?error=auth_failed')
+            if (sessionError) {
+              console.error('AuthCallback: Session check error:', sessionError)
+              setStatus('Session check failed')
+              navigate('/?error=session_check_failed')
               return
             }
             
-            if (result.data?.session) {
-              console.log('Auth callback success, user:', result.data.session.user.email)
+            if (session) {
+              console.log('AuthCallback: Session found! User:', session.user.email)
               setStatus('Authentication successful! Redirecting...')
-              // Clear the URL parameters
-              window.history.replaceState({}, document.title, window.location.pathname)
-              // Give a moment for the session to be established
               setTimeout(() => {
                 navigate('/')
-              }, 1000)
+              }, 500)
               return
-            } else {
-              console.warn('No session returned from code exchange')
-              setStatus('No session created')
             }
-          } catch (exchangeErr) {
-            console.error('Exception during code exchange:', exchangeErr)
-            setStatus('Error during authentication')
-            navigate('/?error=exchange_failed')
-            return
+            
+            if (attempts < maxAttempts) {
+              console.log('AuthCallback: No session yet, retrying...')
+              setTimeout(checkForSession, 500)
+            } else {
+              console.log('AuthCallback: Max attempts reached, redirecting anyway...')
+              setStatus('Redirecting...')
+              navigate('/')
+            }
           }
+          
+          // Start checking after a brief delay
+          setTimeout(checkForSession, 100)
+          return
         }
         
-        // Fallback: try to get existing session
-        console.log('Checking for existing session...')
+        // If no code, check for existing session
+        console.log('AuthCallback: No code, checking for existing session...')
         setStatus('Checking session...')
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-        console.log('Session check result:', { session: !!sessionData?.session, error: sessionError })
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
-          console.error('Session check error:', sessionError)
+          console.error('AuthCallback: Session check error:', sessionError)
           setStatus('Session check failed')
           navigate('/?error=session_check_failed')
           return
         }
 
-        if (sessionData.session) {
-          console.log('Found existing session, user:', sessionData.session.user.email)
+        if (session) {
+          console.log('AuthCallback: Found existing session, user:', session.user.email)
           setStatus('Session found! Redirecting...')
           setTimeout(() => {
             navigate('/')
-          }, 1000)
+          }, 500)
         } else {
-          console.log('No session found, redirecting to home')
+          console.log('AuthCallback: No session found, redirecting to home')
           setStatus('No session found, redirecting...')
           setTimeout(() => {
             navigate('/?error=no_session')
-          }, 2000)
+          }, 1000)
         }
       } catch (error) {
-        console.error('Callback error:', error)
+        console.error('AuthCallback: Callback error:', error)
         setStatus('Authentication failed')
         setTimeout(() => {
           navigate('/?error=callback_failed')
-        }, 2000)
+        }, 1000)
       }
     }
 
