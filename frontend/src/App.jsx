@@ -48,9 +48,9 @@ function App() {
         
         if (currentUser) {
           await fetchProfile(currentUser.id)
+          // Don't auto-redirect from auth/callback - let AuthCallback handle it
           // After successful login, if they don't have a profile, they'll be redirected to username setup
-          // Keep user on their current page after login, unless they're on auth pages
-          if (location.pathname === '/auth' || location.pathname === '/auth/callback') {
+          if (location.pathname === '/auth') {
             navigate('/')
           }
         } else {

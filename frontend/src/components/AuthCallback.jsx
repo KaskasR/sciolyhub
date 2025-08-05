@@ -54,10 +54,36 @@ function AuthCallback() {
             
             if (session) {
               console.log('AuthCallback: Session found! User:', session.user.email)
-              setStatus('Authentication successful! Redirecting...')
-              setTimeout(() => {
-                navigate('/')
-              }, 500)
+              setStatus('Authentication successful! Checking profile...')
+              
+              // Check if user has a profile
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single()
+              
+              if (profileError && profileError.code === 'PGRST116') {
+                // No profile exists, redirect to username setup
+                console.log('AuthCallback: No profile found, redirecting to username setup')
+                setStatus('Setting up your profile...')
+                setTimeout(() => {
+                  navigate('/auth')
+                }, 500)
+              } else if (profileError) {
+                console.error('AuthCallback: Profile check error:', profileError)
+                setStatus('Profile check failed, redirecting...')
+                setTimeout(() => {
+                  navigate('/')
+                }, 500)
+              } else {
+                // Profile exists, redirect to home
+                console.log('AuthCallback: Profile found, redirecting to home')
+                setStatus('Welcome back! Redirecting...')
+                setTimeout(() => {
+                  navigate('/')
+                }, 500)
+              }
               return
             }
             
@@ -90,10 +116,36 @@ function AuthCallback() {
 
         if (session) {
           console.log('AuthCallback: Found existing session, user:', session.user.email)
-          setStatus('Session found! Redirecting...')
-          setTimeout(() => {
-            navigate('/')
-          }, 500)
+          setStatus('Session found! Checking profile...')
+          
+          // Check if user has a profile
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (profileError && profileError.code === 'PGRST116') {
+            // No profile exists, redirect to username setup
+            console.log('AuthCallback: No profile found, redirecting to username setup')
+            setStatus('Setting up your profile...')
+            setTimeout(() => {
+              navigate('/auth')
+            }, 500)
+          } else if (profileError) {
+            console.error('AuthCallback: Profile check error:', profileError)
+            setStatus('Profile check failed, redirecting...')
+            setTimeout(() => {
+              navigate('/')
+            }, 500)
+          } else {
+            // Profile exists, redirect to home
+            console.log('AuthCallback: Profile found, redirecting to home')
+            setStatus('Welcome back! Redirecting...')
+            setTimeout(() => {
+              navigate('/')
+            }, 500)
+          }
         } else {
           console.log('AuthCallback: No session found, redirecting to home')
           setStatus('No session found, redirecting...')
