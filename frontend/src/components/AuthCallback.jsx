@@ -8,6 +8,30 @@ function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // Handle hash-based authentication (which is what Supabase uses by default)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        
+        if (accessToken) {
+          // If there's an access token in the URL, let Supabase handle the session
+          const { data, error } = await supabase.auth.getSession()
+          
+          if (error) {
+            console.error('Auth callback error:', error)
+            navigate('/?error=auth_failed')
+            return
+          }
+
+          if (data.session) {
+            // Clear the hash from URL
+            window.history.replaceState({}, document.title, window.location.pathname)
+            // User is authenticated, redirect to main app
+            navigate('/')
+            return
+          }
+        }
+
+        // Fallback: try to get session normally
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
