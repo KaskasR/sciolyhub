@@ -43,11 +43,11 @@
 /* Content Area */
 .content-area {
   flex: 1;
-  padding: 2rem;
+  padding: 0;
   overflow-y: auto;
   width: 100%;
   box-sizing: border-box;
-  height: calc(100vh - 2rem);
+  height: calc(100vh - 0rem);
 }
 
 /* Hero Section */
@@ -788,9 +788,9 @@
 }
 
 .main-content {
-  padding: clamp(1rem, 4vw, 2rem);
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: 9999999999px;
+  margin: 0;
   width: 100%;
   box-sizing: border-box;
 }
