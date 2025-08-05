@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import './Home.css'
 
-function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) {
+function Home({ user, profile, onProfileUpdate, theme }) {
   const [loading, setLoading] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
     // Ensure we have a profile
@@ -45,29 +44,6 @@ function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) 
     }
   }
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    onSignOut()
-  }
-
-  const handleDropdownClick = (action) => {
-    setShowDropdown(false)
-    
-    switch (action) {
-      case 'profile':
-        onNavigate('profile')
-        break
-      case 'settings':
-        onNavigate('settings')
-        break
-      case 'signout':
-        handleSignOut()
-        break
-      default:
-        break
-    }
-  }
-
   if (loading) {
     return (
       <div className="loading-container">
@@ -78,75 +54,9 @@ function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) 
   }
 
   return (
-    <div className={`home-container ${theme}`}>
-      <nav className="navbar">
-        <div className="nav-brand">
-          <span className="nav-logo">🔬</span>
-          <span className="nav-title">SciOly Hub</span>
-        </div>
-        <div className="nav-user">
-          <div 
-            className="user-dropdown"
-            onMouseEnter={() => setShowDropdown(true)}
-            onMouseLeave={() => setShowDropdown(false)}
-          >
-            <div className="user-trigger">
-              <div className="nav-avatar">
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={`${profile.username || 'User'}'s profile`}
-                    className="nav-avatar-image"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className="nav-avatar-fallback" 
-                  style={{ display: profile?.avatar_url ? 'none' : 'flex' }}
-                >
-                  {profile?.username?.charAt(0).toUpperCase() || '👤'}
-                </div>
-              </div>
-              <span className="welcome-text">
-                Hey, {profile?.username || 'Scientist'}! 👋
-              </span>
-              <span className="dropdown-arrow">▼</span>
-            </div>
-            
-            {showDropdown && (
-              <div className="dropdown-menu">
-                <button 
-                  className="dropdown-item"
-                  onClick={() => handleDropdownClick('profile')}
-                >
-                  <span className="dropdown-icon">�</span>
-                  Profile Dashboard
-                </button>
-                <button 
-                  className="dropdown-item"
-                  onClick={() => handleDropdownClick('settings')}
-                >
-                  <span className="dropdown-icon">⚙️</span>
-                  Settings
-                </button>
-                <div className="dropdown-divider"></div>
-                <button 
-                  className="dropdown-item danger"
-                  onClick={() => handleDropdownClick('signout')}
-                >
-                  <span className="dropdown-icon">🚪</span>
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <main className="main-content">
+    <div className={`home-page ${theme}`}>
+      {/* Content Area */}
+      <div className="content-area">
         <section className="hero">
           <div className="hero-content">
             <h1 className="hero-title">
@@ -228,7 +138,7 @@ function Home({ user, profile, onSignOut, onNavigate, onProfileUpdate, theme }) 
             </div>
           </div>
         </section>
-      </main>
+      </div>
 
       <footer className="footer">
         <p>Built with ❤️ for Science Olympiad champions everywhere! 🌟</p>

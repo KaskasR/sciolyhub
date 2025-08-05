@@ -88,8 +88,9 @@ function Auth({ onAuth, user }) {
       {
         id: user.id,
         username: username.trim(),
-        display_name: user.user_metadata?.full_name || username.trim(),
-        avatar_url: user.user_metadata?.avatar_url
+        full_name: user.user_metadata?.full_name || username.trim(),
+        avatar_url: user.user_metadata?.avatar_url,
+        email: user.email
       },
     ])
 

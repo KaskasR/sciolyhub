@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './supabase'
 import Auth from './components/Auth'
 import Home from './components/Home'
 import ProfileDashboard from './components/ProfileDashboard'
+import CodebustersHub from './components/CodebustersHub'
 import Settings from './components/Settings'
+import Layout from './components/Layout'
+import LoggedOutDashboard from './components/LoggedOutDashboard'
+import AuthCallback from './components/AuthCallback'
 
 function App() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [currentPage, setCurrentPage] = useState('home')
   const [theme, setTheme] = useState('light')
+  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     // Load theme from localStorage
@@ -41,9 +47,16 @@ function App() {
         
         if (currentUser) {
           await fetchProfile(currentUser.id)
+          // If user just logged in and they're on the homepage, auth page, or callback, redirect to home
+          if (location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/auth/callback') {
+            navigate('/home')
+          }
         } else {
           setProfile(null)
-          setCurrentPage('home')
+          // Only redirect to homepage if not on auth-related pages
+          if (location.pathname !== '/auth' && location.pathname !== '/auth/callback' && location.pathname !== '/') {
+            navigate('/')
+          }
         }
         
         setLoading(false)
@@ -51,7 +64,7 @@ function App() {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [navigate, location.pathname])
 
   const fetchProfile = async (userId) => {
     try {
@@ -79,6 +92,7 @@ function App() {
   const handleAuth = async (user) => {
     setUser(user)
     await fetchProfile(user.id)
+    navigate('/home')
   }
 
   const handleUsernameRequired = () => {
@@ -90,7 +104,7 @@ function App() {
   const handleSignOut = () => {
     setUser(null)
     setProfile(null)
-    setCurrentPage('home')
+    navigate('/')
   }
 
   const handleThemeChange = (newTheme) => {
@@ -98,14 +112,12 @@ function App() {
     document.documentElement.setAttribute('data-theme', newTheme)
   }
 
-  const navigateTo = (page) => {
-    setCurrentPage(page)
-  }
-
   if (loading) {
     return (
       <div style={{ 
-        minHeight: '100vh', 
+        minHeight: '100vh',
+        width: '100vw',
+        maxWidth: '100%',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
@@ -113,54 +125,152 @@ function App() {
           ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)' 
           : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
-        fontSize: '1.2rem'
+        fontSize: '1.2rem',
+        fontWeight: '600',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 9999,
+        margin: 0,
+        padding: 0,
+        boxSizing: 'border-box'
       }}>
         Loading SciOly Hub... 🔬
       </div>
     )
   }
 
-  if (!user) {
-    return <Auth onAuth={handleAuth} />
-  }
-
-  // Check if user needs to set up username (signed in with Google but no profile)
-  if (user && !profile) {
-    return <Auth onAuth={handleAuth} user={user} />
-  }
-
-  // Render different pages based on currentPage state
-  switch (currentPage) {
-    case 'profile':
-      return (
-        <ProfileDashboard 
-          user={user} 
-          profile={profile}
-          onBack={() => navigateTo('home')}
-        />
-      )
-    case 'settings':
-      return (
-        <Settings 
-          user={user} 
-          profile={profile}
-          onBack={() => navigateTo('home')}
-          theme={theme}
-          onThemeChange={handleThemeChange}
-        />
-      )
-    default:
-      return (
-        <Home 
-          user={user} 
-          profile={profile}
-          onSignOut={handleSignOut}
-          onNavigate={navigateTo}
-          onProfileUpdate={fetchProfile}
-          theme={theme}
-        />
-      )
-  }
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          user ? (
+            profile ? (
+              <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme}>
+                <Home 
+                  user={user} 
+                  profile={profile}
+                  onSignOut={handleSignOut}
+                  onProfileUpdate={fetchProfile}
+                  theme={theme}
+                />
+              </Layout>
+            ) : (
+              <Auth onAuth={handleAuth} user={user} />
+            )
+          ) : (
+            <LoggedOutDashboard theme={theme} />
+          )
+        } 
+      />
+      <Route 
+        path="/home" 
+        element={
+          user ? (
+            profile ? (
+              <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+                <Home 
+                  user={user} 
+                  profile={profile}
+                  onSignOut={handleSignOut}
+                  onProfileUpdate={fetchProfile}
+                  theme={theme}
+                />
+              </Layout>
+            ) : (
+              <Auth onAuth={handleAuth} user={user} />
+            )
+          ) : (
+            <LoggedOutDashboard theme={theme} />
+          )
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={
+          user && profile ? (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <ProfileDashboard 
+                user={user} 
+                profile={profile}
+                onBack={() => navigate('/home')}
+                theme={theme}
+              />
+            </Layout>
+          ) : (
+            <LoggedOutDashboard theme={theme} />
+          )
+        } 
+      />
+      <Route 
+        path="/settings" 
+        element={
+          user ? (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <Settings 
+                user={user} 
+                profile={profile}
+                onBack={() => navigate('/home')}
+                theme={theme}
+                onThemeChange={handleThemeChange}
+              />
+            </Layout>
+          ) : (
+            <LoggedOutDashboard theme={theme} />
+          )
+        } 
+      />
+      <Route 
+        path="/codebusters" 
+        element={
+          user && profile ? (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <CodebustersHub 
+                user={user} 
+                profile={profile}
+                onBack={() => navigate('/home')}
+                theme={theme}
+              />
+            </Layout>
+          ) : (
+            <LoggedOutDashboard theme={theme} />
+          )
+        } 
+      />
+      <Route 
+        path="/auth" 
+        element={<Auth onAuth={handleAuth} />} 
+      />
+      <Route 
+        path="/auth/callback" 
+        element={<AuthCallback />} 
+      />
+      <Route 
+        path="*" 
+        element={
+          user ? (
+            profile ? (
+              <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+                <Home 
+                  user={user} 
+                  profile={profile}
+                  onSignOut={handleSignOut}
+                  onProfileUpdate={fetchProfile}
+                  theme={theme}
+                />
+              </Layout>
+            ) : (
+              <Auth onAuth={handleAuth} user={user} />
+            )
+          ) : (
+            <LoggedOutDashboard theme={theme} />
+          )
+        } 
+      />
+    </Routes>
+  )
 }
 
 export default App

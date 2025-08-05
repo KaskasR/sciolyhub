@@ -1,0 +1,161 @@
+.codebusters-hub {
+  height: 100vh;
+  width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.codebusters-hub.light {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fef3c7 100%);
+  color: #1f2937;
+}
+
+.codebusters-hub.dark {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+  color: #f9fafb;
+}
+
+.hub-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.back-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+}
+
+.hub-title {
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-weight: 800;
+  margin: 0;
+}
+
+.codebusters-hub.light .hub-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.codebusters-hub.dark .hub-title {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hub-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.coming-soon-card {
+  backdrop-filter: blur(20px);
+  border-radius: clamp(20px, 4vw, 32px);
+  padding: clamp(3rem, 6vw, 4rem);
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 500px;
+  width: 100%;
+}
+
+.codebusters-hub.light .coming-soon-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.codebusters-hub.dark .coming-soon-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.coming-soon-icon {
+  font-size: clamp(3rem, 8vw, 4rem);
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.coming-soon-card h2 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.codebusters-hub.light .coming-soon-card h2 {
+  color: #1f2937;
+}
+
+.codebusters-hub.dark .coming-soon-card h2 {
+  color: white;
+}
+
+.coming-soon-card p {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.codebusters-hub.light .coming-soon-card p {
+  color: rgba(31, 41, 55, 0.8);
+}
+
+.codebusters-hub.dark .coming-soon-card p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.feature-preview {
+  margin-top: 2rem;
+}
+
+.preview-tag {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .hub-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .coming-soon-card {
+    margin: 1rem;
+  }
+}

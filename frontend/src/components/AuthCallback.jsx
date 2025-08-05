@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 function AuthCallback() {
+  const navigate = useNavigate()
+
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
@@ -9,25 +12,25 @@ function AuthCallback() {
         
         if (error) {
           console.error('Auth callback error:', error)
-          window.location.href = '/?error=auth_failed'
+          navigate('/?error=auth_failed')
           return
         }
 
         if (data.session) {
           // User is authenticated, redirect to main app
-          window.location.href = '/'
+          navigate('/')
         } else {
           // No session, redirect to login
-          window.location.href = '/?error=no_session'
+          navigate('/?error=no_session')
         }
       } catch (error) {
         console.error('Callback error:', error)
-        window.location.href = '/?error=callback_failed'
+        navigate('/?error=callback_failed')
       }
     }
 
     handleAuthCallback()
-  }, [])
+  }, [navigate])
 
   return (
     <div style={{
