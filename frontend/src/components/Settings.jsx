@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
 import './Settings.css'
 
-function Settings({ user, profile, onBack, theme, onThemeChange }) {
+function Settings({ theme, onThemeChange }) {
+  const { user, profile, refreshProfile, signOut } = useAuth()
+  const navigate = useNavigate()
   const [username, setUsername] = useState(profile?.username || '')
   const [updateMessage, setUpdateMessage] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
@@ -71,6 +75,7 @@ function Settings({ user, profile, onBack, theme, onThemeChange }) {
       console.error('Update error:', error)
     } else {
       setUpdateMessage('Username updated successfully! 🎉')
+      await refreshProfile() // Refresh the profile data
       setTimeout(() => setUpdateMessage(''), 3000)
     }
     setIsUpdating(false)
@@ -85,7 +90,7 @@ function Settings({ user, profile, onBack, theme, onThemeChange }) {
   return (
     <div className={`settings ${theme}`}>
       <div className="settings-header">
-        <button onClick={onBack} className="back-btn">← Back to Hub</button>
+        <button onClick={() => navigate('/')} className="back-btn">← Back to Hub</button>
         <h1 className="settings-title">Settings ⚙️</h1>
       </div>
 

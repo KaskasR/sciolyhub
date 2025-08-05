@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabase'
+import { useAuth } from '../contexts/AuthContext'
 import './Home.css'
 
-function Home({ user, profile, onProfileUpdate, theme }) {
+function Home({ theme }) {
+  const { user, profile } = useAuth()
   const [loading, setLoading] = useState(false)
 
   // No automatic profile creation - this should be handled by the Auth component

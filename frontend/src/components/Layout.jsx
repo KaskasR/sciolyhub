@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase'
+import { useAuth } from '../contexts/AuthContext'
 import './Layout.css'
 
-function Layout({ user, profile, onSignOut, children, theme, onThemeChange }) {
+function Layout({ children, theme, onThemeChange }) {
   const navigate = useNavigate()
+  const { user, profile, signOut } = useAuth()
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    onSignOut()
+    try {
+      await signOut()
+      navigate('/login')
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
   }
 
   const handleNavigation = (path) => {
@@ -22,7 +27,7 @@ function Layout({ user, profile, onSignOut, children, theme, onThemeChange }) {
   }
 
   const handleLoginClick = () => {
-    navigate('/auth')
+    navigate('/login')
   }
 
   return (

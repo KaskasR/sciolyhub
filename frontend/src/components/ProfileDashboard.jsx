@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabase'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { uploadAvatar, deleteAvatar } from '../utils/avatarUpload'
 import './ProfileDashboard.css'
 
-function ProfileDashboard({ user, profile, onBack, theme }) {
+function ProfileDashboard({ theme }) {
+  const { user, profile, refreshProfile } = useAuth()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     testsCompleted: 0,
     averageScore: 0,
@@ -92,10 +95,9 @@ function ProfileDashboard({ user, profile, onBack, theme }) {
 
         setUploadMessage('Profile picture updated successfully! 🎉')
         
-        // Refresh the page after a short delay to show the new image
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+        // Refresh the profile data to show the new image
+        await refreshProfile()
+        setTimeout(() => setUploadMessage(''), 3000)
       } else {
         setUploadMessage(`Upload failed: ${result.error}`)
       }
@@ -131,10 +133,9 @@ function ProfileDashboard({ user, profile, onBack, theme }) {
 
         setUploadMessage('Profile picture removed successfully! 🗑️')
         
-        // Refresh the page after a short delay
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+        // Refresh the profile data
+        await refreshProfile()
+        setTimeout(() => setUploadMessage(''), 3000)
       } else {
         setUploadMessage(`Failed to remove picture: ${result.error}`)
       }
@@ -236,7 +237,7 @@ function ProfileDashboard({ user, profile, onBack, theme }) {
   return (
     <div className={`profile-dashboard ${theme}`}>
       <div className="dashboard-header">
-        <button onClick={onBack} className="back-btn">← Back to Hub</button>
+        <button onClick={() => navigate('/')} className="back-btn">← Back to Hub</button>
         <h1 className="dashboard-title">Profile Dashboard</h1>
       </div>
 

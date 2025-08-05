@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import './CodebustersHub.css'
 import AristocratCipher from './AristocratCipher'
 
-function CodebustersHub({ user, profile, onBack, theme }) {
+function CodebustersHub({ theme }) {
+  const { user, profile } = useAuth()
+  const navigate = useNavigate()
   const [currentView, setCurrentView] = useState('hub')
 
   const handleNavigateToAristocrat = () => {
@@ -26,7 +30,7 @@ function CodebustersHub({ user, profile, onBack, theme }) {
   return (
     <div className={`codebusters-hub ${theme}`}>
       <div className="hub-header">
-        <button onClick={onBack} className="back-btn">← Back to Hub</button>
+        <button onClick={() => navigate('/')} className="back-btn">← Back to Hub</button>
         <h1 className="hub-title">Codebusters Hub 🔐</h1>
       </div>
 
