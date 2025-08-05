@@ -47,14 +47,14 @@ function App() {
         
         if (currentUser) {
           await fetchProfile(currentUser.id)
-          // If user just logged in and they're on the homepage, auth page, or callback, redirect to home
-          if (location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/auth/callback') {
-            navigate('/home')
+          // Keep user on their current page after login, unless they're on auth pages
+          if (location.pathname === '/auth' || location.pathname === '/auth/callback') {
+            navigate('/')
           }
         } else {
           setProfile(null)
-          // Only redirect to homepage if not on auth-related pages
-          if (location.pathname !== '/auth' && location.pathname !== '/auth/callback' && location.pathname !== '/') {
+          // Keep user on their current page after logout, unless they're on protected pages
+          if (location.pathname === '/profile' || location.pathname === '/settings') {
             navigate('/')
           }
         }
@@ -92,7 +92,7 @@ function App() {
   const handleAuth = async (user) => {
     setUser(user)
     await fetchProfile(user.id)
-    navigate('/home')
+    navigate('/')
   }
 
   const handleUsernameRequired = () => {
@@ -146,45 +146,29 @@ function App() {
       <Route 
         path="/" 
         element={
-          user ? (
-            profile ? (
-              <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme}>
-                <Home 
-                  user={user} 
-                  profile={profile}
-                  onSignOut={handleSignOut}
-                  onProfileUpdate={fetchProfile}
-                  theme={theme}
-                />
-              </Layout>
-            ) : (
-              <Auth onAuth={handleAuth} user={user} />
-            )
-          ) : (
-            <LoggedOutDashboard theme={theme} />
-          )
+          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+            <Home 
+              user={user} 
+              profile={profile}
+              onSignOut={handleSignOut}
+              onProfileUpdate={fetchProfile}
+              theme={theme}
+            />
+          </Layout>
         } 
       />
       <Route 
         path="/home" 
         element={
-          user ? (
-            profile ? (
-              <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-                <Home 
-                  user={user} 
-                  profile={profile}
-                  onSignOut={handleSignOut}
-                  onProfileUpdate={fetchProfile}
-                  theme={theme}
-                />
-              </Layout>
-            ) : (
-              <Auth onAuth={handleAuth} user={user} />
-            )
-          ) : (
-            <LoggedOutDashboard theme={theme} />
-          )
+          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+            <Home 
+              user={user} 
+              profile={profile}
+              onSignOut={handleSignOut}
+              onProfileUpdate={fetchProfile}
+              theme={theme}
+            />
+          </Layout>
         } 
       />
       <Route 
@@ -195,12 +179,20 @@ function App() {
               <ProfileDashboard 
                 user={user} 
                 profile={profile}
-                onBack={() => navigate('/home')}
+                onBack={() => navigate('/')}
                 theme={theme}
               />
             </Layout>
           ) : (
-            <LoggedOutDashboard theme={theme} />
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <Home 
+                user={user} 
+                profile={profile}
+                onSignOut={handleSignOut}
+                onProfileUpdate={fetchProfile}
+                theme={theme}
+              />
+            </Layout>
           )
         } 
       />
@@ -212,31 +204,35 @@ function App() {
               <Settings 
                 user={user} 
                 profile={profile}
-                onBack={() => navigate('/home')}
+                onBack={() => navigate('/')}
                 theme={theme}
                 onThemeChange={handleThemeChange}
               />
             </Layout>
           ) : (
-            <LoggedOutDashboard theme={theme} />
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <Home 
+                user={user} 
+                profile={profile}
+                onSignOut={handleSignOut}
+                onProfileUpdate={fetchProfile}
+                theme={theme}
+              />
+            </Layout>
           )
         } 
       />
       <Route 
         path="/codebusters" 
         element={
-          user && profile ? (
-            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-              <CodebustersHub 
-                user={user} 
-                profile={profile}
-                onBack={() => navigate('/home')}
-                theme={theme}
-              />
-            </Layout>
-          ) : (
-            <LoggedOutDashboard theme={theme} />
-          )
+          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+            <CodebustersHub 
+              user={user} 
+              profile={profile}
+              onBack={() => navigate('/')}
+              theme={theme}
+            />
+          </Layout>
         } 
       />
       <Route 
@@ -250,23 +246,15 @@ function App() {
       <Route 
         path="*" 
         element={
-          user ? (
-            profile ? (
-              <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-                <Home 
-                  user={user} 
-                  profile={profile}
-                  onSignOut={handleSignOut}
-                  onProfileUpdate={fetchProfile}
-                  theme={theme}
-                />
-              </Layout>
-            ) : (
-              <Auth onAuth={handleAuth} user={user} />
-            )
-          ) : (
-            <LoggedOutDashboard theme={theme} />
-          )
+          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+            <Home 
+              user={user} 
+              profile={profile}
+              onSignOut={handleSignOut}
+              onProfileUpdate={fetchProfile}
+              theme={theme}
+            />
+          </Layout>
         } 
       />
     </Routes>

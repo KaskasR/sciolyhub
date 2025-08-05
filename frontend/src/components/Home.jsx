@@ -6,7 +6,7 @@ function Home({ user, profile, onProfileUpdate, theme }) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Ensure we have a profile
+    // Ensure we have a profile if user is logged in
     if (user && !profile) {
       fetchOrCreateProfile()
     }
@@ -44,7 +44,8 @@ function Home({ user, profile, onProfileUpdate, theme }) {
     }
   }
 
-  if (loading) {
+  // Show loading only for logged-in users without profiles
+  if (loading && user) {
     return (
       <div className="loading-container">
         <div className="loading-spinner-large">🧬</div>
@@ -60,12 +61,17 @@ function Home({ user, profile, onProfileUpdate, theme }) {
         <section className="hero">
           <div className="hero-content">
             <h1 className="hero-title">
-              Welcome to Your Science Lab, {profile?.username}! 
+              {user && profile 
+                ? `Welcome to Your Science Lab, ${profile.username}!` 
+                : 'Welcome to SciOly Hub!'
+              }
               <span className="hero-emoji">🧪</span>
             </h1>
             <p className="hero-subtitle">
-              Your one-stop hub for Science Olympiad practice, resources, and competition prep.
-              Time to turn those theories into victories! 🏆
+              {user 
+                ? 'Your one-stop hub for Science Olympiad practice, resources, and competition prep. Time to turn those theories into victories! 🏆'
+                : 'The ultimate platform for Science Olympiad preparation, collaboration, and competition tracking. Join thousands of students preparing for success! 🏆'
+              }
             </p>
           </div>
           <div className="hero-visual">

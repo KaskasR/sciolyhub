@@ -1,21 +1,19 @@
 .codebusters-hub {
-  height: 100vh;
+  height: 100%;
   width: 100%;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: clamp(1rem, 4vw, 2rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
   box-sizing: border-box;
   flex: 1;
 }
 
 .codebusters-hub.light {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fef3c7 100%);
   color: #1f2937;
 }
 
 .codebusters-hub.dark {
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
   color: #f9fafb;
 }
 
@@ -24,9 +22,6 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .back-btn {
@@ -58,8 +53,7 @@
 }
 
 .hub-content {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: clamp(1.5rem, 4vw, 2rem);
@@ -73,7 +67,7 @@
   font-size: clamp(1.2rem, 3vw, 1.5rem);
   font-weight: 700;
   margin: 0 0 1.5rem 0;
-  text-align: center;
+  text-align: left;
   border-radius: clamp(16px, 4vw, 24px);
   padding: clamp(1rem, 3vw, 1.5rem);
   border: 1px solid rgba(255, 255, 255, 0.2);

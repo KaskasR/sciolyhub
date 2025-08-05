@@ -99,6 +99,60 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+/* Login Section */
+.sidebar-login {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.layout-container.light .sidebar-login {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.sidebar-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+}
+
+.login-icon {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.login-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.login-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
 .layout-container.dark .sidebar-profile:hover {
   background: rgba(255, 255, 255, 0.05);
 }
@@ -212,18 +266,6 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-/* Force everything inside main-content to be full width - aggressive override */
-.main-content * {
-  max-width: none !important;
-}
-
-.main-content .content-area {
-  padding: clamp(1rem, 4vw, 2rem) !important;
-  margin: 0 !important;
-  max-width: none !important;
-  width: 100% !important;
 }
 
 /* Mobile Responsiveness */

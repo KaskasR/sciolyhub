@@ -1,6 +1,6 @@
 /* Home Page Styles */
 .home-page {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -10,12 +10,10 @@
 }
 
 .home-page.light {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fef3c7 100%);
   color: #1f2937;
 }
 
 .home-page.dark {
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
   color: #f9fafb;
 }
 
@@ -43,11 +41,10 @@
 /* Content Area */
 .content-area {
   flex: 1;
-  padding: 0;
+  padding: clamp(1rem, 4vw, 2rem);
   overflow-y: auto;
   width: 100%;
   box-sizing: border-box;
-  height: calc(100vh - 0rem);
 }
 
 /* Hero Section */
