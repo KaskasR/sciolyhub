@@ -5,54 +5,12 @@ import './Home.css'
 function Home({ user, profile, onProfileUpdate, theme }) {
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    // Ensure we have a profile if user is logged in
-    if (user && !profile) {
-      fetchOrCreateProfile()
-    }
-  }, [user, profile])
+  // No automatic profile creation - this should be handled by the Auth component
+  // useEffect(() => {
+  //   // Profile creation is now handled in the Auth component
+  // }, [user, profile])
 
-  const fetchOrCreateProfile = async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (error && error.code === 'PGRST116') {
-        // Create default profile
-        const defaultUsername = user.email.split('@')[0]
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert([{
-            id: user.id,
-            username: defaultUsername,
-          }])
-
-        if (!insertError) {
-          onProfileUpdate(user.id)
-        }
-      } else if (!error) {
-        // Profile exists, no need to update
-      }
-    } catch (error) {
-      console.error('Error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Show loading only for logged-in users without profiles
-  if (loading && user) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner-large">🧬</div>
-        <p>Loading your lab...</p>
-      </div>
-    )
-  }
+  // Removed loading logic since profile creation is handled in Auth component
 
   return (
     <div className={`home-page ${theme}`}>

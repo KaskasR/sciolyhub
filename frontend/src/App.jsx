@@ -71,11 +71,13 @@ function App() {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email)
         const currentUser = session?.user ?? null
         setUser(currentUser)
         
         if (currentUser) {
           await fetchProfile(currentUser.id)
+          // After successful login, if they don't have a profile, they'll be redirected to username setup
           // Keep user on their current page after login, unless they're on auth pages
           if (location.pathname === '/auth' || location.pathname === '/auth/callback') {
             navigate('/')
@@ -121,6 +123,7 @@ function App() {
   const handleAuth = async (user) => {
     setUser(user)
     await fetchProfile(user.id)
+    // After authentication (especially after username setup), go to home
     navigate('/')
   }
 
@@ -175,29 +178,38 @@ function App() {
       <Route 
         path="/" 
         element={
-          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-            <Home 
-              user={user} 
-              profile={profile}
-              onSignOut={handleSignOut}
-              onProfileUpdate={fetchProfile}
-              theme={theme}
-            />
-          </Layout>
+          // If user is authenticated but has no profile, redirect to auth to set up username
+          user && !profile ? (
+            <Auth onAuth={handleAuth} user={user} needsUsername={true} />
+          ) : (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <Home 
+                user={user} 
+                profile={profile}
+                onSignOut={handleSignOut}
+                onProfileUpdate={fetchProfile}
+                theme={theme}
+              />
+            </Layout>
+          )
         } 
       />
       <Route 
         path="/home" 
         element={
-          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-            <Home 
-              user={user} 
-              profile={profile}
-              onSignOut={handleSignOut}
-              onProfileUpdate={fetchProfile}
-              theme={theme}
-            />
-          </Layout>
+          user && !profile ? (
+            <Auth onAuth={handleAuth} user={user} needsUsername={true} />
+          ) : (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <Home 
+                user={user} 
+                profile={profile}
+                onSignOut={handleSignOut}
+                onProfileUpdate={fetchProfile}
+                theme={theme}
+              />
+            </Layout>
+          )
         } 
       />
       <Route 
@@ -212,6 +224,8 @@ function App() {
                 theme={theme}
               />
             </Layout>
+          ) : user && !profile ? (
+            <Auth onAuth={handleAuth} user={user} needsUsername={true} />
           ) : (
             <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
               <Home 
@@ -228,7 +242,7 @@ function App() {
       <Route 
         path="/settings" 
         element={
-          user ? (
+          user && profile ? (
             <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
               <Settings 
                 user={user} 
@@ -238,6 +252,8 @@ function App() {
                 onThemeChange={handleThemeChange}
               />
             </Layout>
+          ) : user && !profile ? (
+            <Auth onAuth={handleAuth} user={user} needsUsername={true} />
           ) : (
             <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
               <Home 
@@ -254,19 +270,23 @@ function App() {
       <Route 
         path="/codebusters" 
         element={
-          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-            <CodebustersHub 
-              user={user} 
-              profile={profile}
-              onBack={() => navigate('/')}
-              theme={theme}
-            />
-          </Layout>
+          user && !profile ? (
+            <Auth onAuth={handleAuth} user={user} needsUsername={true} />
+          ) : (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <CodebustersHub 
+                user={user} 
+                profile={profile}
+                onBack={() => navigate('/')}
+                theme={theme}
+              />
+            </Layout>
+          )
         } 
       />
       <Route 
         path="/auth" 
-        element={<Auth onAuth={handleAuth} />} 
+        element={<Auth onAuth={handleAuth} user={user} needsUsername={user && !profile} />} 
       />
       <Route 
         path="/auth/callback" 
@@ -275,15 +295,19 @@ function App() {
       <Route 
         path="*" 
         element={
-          <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
-            <Home 
-              user={user} 
-              profile={profile}
-              onSignOut={handleSignOut}
-              onProfileUpdate={fetchProfile}
-              theme={theme}
-            />
-          </Layout>
+          user && !profile ? (
+            <Auth onAuth={handleAuth} user={user} needsUsername={true} />
+          ) : (
+            <Layout user={user} profile={profile} onSignOut={handleSignOut} theme={theme} onThemeChange={handleThemeChange}>
+              <Home 
+                user={user} 
+                profile={profile}
+                onSignOut={handleSignOut}
+                onProfileUpdate={fetchProfile}
+                theme={theme}
+              />
+            </Layout>
+          )
         } 
       />
     </Routes>

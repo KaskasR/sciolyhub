@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import './Auth.css'
 
-function Auth({ onAuth, user }) {
+function Auth({ onAuth, user, needsUsername = false }) {
   const [username, setUsername] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showUsernameInput, setShowUsernameInput] = useState(!!user) // Show username input if user exists but no profile
+  const [showUsernameInput, setShowUsernameInput] = useState(needsUsername || !!user) // Show username input if user exists but no profile
+
+  useEffect(() => {
+    // If we have a user but they need a username, show the username input
+    if (user && needsUsername) {
+      setShowUsernameInput(true)
+      setMessage('Please choose a username to complete your profile setup')
+    }
+  }, [user, needsUsername])
 
   const checkUsernameAvailability = async (username) => {
     if (username.length < 3) {
@@ -42,7 +50,7 @@ function Auth({ onAuth, user }) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       })
 
@@ -75,24 +83,26 @@ function Auth({ onAuth, user }) {
     }
 
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
     
-    if (!user) {
+    if (!currentUser) {
       setMessage('Authentication error. Please try signing in again.')
       setLoading(false)
       return
     }
 
-    // Create profile with username
-    const { error: profileError } = await supabase.from('profiles').insert([
+    // Create or update profile with username using upsert
+    const { error: profileError } = await supabase.from('profiles').upsert([
       {
-        id: user.id,
+        id: currentUser.id,
         username: username.trim(),
-        full_name: user.user_metadata?.full_name || username.trim(),
-        avatar_url: user.user_metadata?.avatar_url,
-        email: user.email
+        full_name: currentUser.user_metadata?.full_name || username.trim(),
+        avatar_url: currentUser.user_metadata?.avatar_url,
+        email: currentUser.email
       },
-    ])
+    ], {
+      onConflict: 'id'
+    })
 
     if (profileError) {
       console.error('Profile creation error:', profileError)
@@ -102,7 +112,7 @@ function Auth({ onAuth, user }) {
     }
 
     setMessage('Welcome to SciOly Hub! 🧬')
-    onAuth(user)
+    onAuth(currentUser)
     setLoading(false)
   }
 
